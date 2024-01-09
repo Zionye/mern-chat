@@ -4,6 +4,7 @@ import Avatar from "./Avatar";
 import Logo from "./Logo";
 import { UserContext } from "../context/userContext";
 import { uniqBy } from "lodash";
+import axios from "axios";
 
 const Chat = () => {
   const [ws, setWs] = useState(null);
@@ -68,6 +69,15 @@ const Chat = () => {
       div.scrollIntoView({behavior:'smooth', block:'end'});
     }
   }, [messages]);
+
+  useEffect(() => {
+    if(selectedUserId){
+      axios.get(`/message/${selectedUserId}`)
+      // .then(res => {
+      //   setMessages(res.data)
+      // })
+    }
+  }, [selectedUserId]);
 
   // 除自己外的用户列表
   const onlinePeopleExclOurUser = {...onlinePeople};
