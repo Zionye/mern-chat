@@ -1,5 +1,5 @@
 
-import { useEffect, useState, useContext } from "react";
+import { useEffect, useState, useContext, useRef } from "react";
 import Avatar from "./Avatar";
 import Logo from "./Logo";
 import { UserContext } from "../context/userContext";
@@ -11,6 +11,8 @@ const Chat = () => {
   const [selectedUserId, setSelectedUserId] = useState(null);
   const [newMessageText, setNewMessageText] = useState("");
   const [messages, setMessages] = useState([]);
+
+  const divUnderMessages = useRef();
 
   const {id} = useContext(UserContext);
 
@@ -58,6 +60,15 @@ const Chat = () => {
     }]));
   };
 
+  // 发送消息后，消息盒子滚动条滚动到最底部
+  useEffect(() => {
+    const div = divUnderMessages.current;
+    if (div) {
+      // https://developer.mozilla.org/en-US/docs/Web/API/Element/scrollIntoView
+      div.scrollIntoView({behavior:'smooth', block:'end'});
+    }
+  }, [messages]);
+
   // 除自己外的用户列表
   const onlinePeopleExclOurUser = {...onlinePeople};
   delete onlinePeopleExclOurUser[id];
@@ -92,16 +103,20 @@ const Chat = () => {
             </div>
           )}
           {!!selectedUserId && (
-            <div className="overflow-y-scroll">
-              {messagesWithoutDupes.map(message => (
-                <div key={message._id} className={(message.sender === id?'text-right':'text-left')}>
-                  <div className={"inline-block text-left p-2 my-2 rounded-md text-sm " + (message.sender === id?"bg-blue-500 text-white" : "bg-white text-gray-500")}>
-                    sender: {message.sender} <br />
-                    my id: {id} <br />
-                    { message.text }
+            <div className="relative h-full">
+              <div className="overflow-y-scroll absolute top-0 left-0 right-0 bottom-2">
+                {messagesWithoutDupes.map(message => (
+                  <div key={message._id} className={(message.sender === id?'text-right':'text-left')}>
+                    <div className={"inline-block text-left p-2 my-2 rounded-md text-sm " + (message.sender === id?"bg-blue-500 text-white" : "bg-white text-gray-500")}>
+                      sender: {message.sender} <br />
+                      my id: {id} <br />
+                      { message.text }
+                    </div>
                   </div>
-                </div>
-              ))}
+                ))}
+
+                <div ref={divUnderMessages}></div>
+              </div>
             </div>
           )}
         </div>
