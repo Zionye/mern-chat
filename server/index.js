@@ -6,6 +6,7 @@ const dotenv = require("dotenv"); // Dotenv 是一个零依赖模块，它将环
 const jwt = require("jsonwebtoken"); // 用于在两方（通常是客户端和服务器）之间安全地创建和发送数据。 https://www.npmjs.com/package/jsonwebtoken
 const bcrypt = require("bcryptjs"); // 密码哈希 https://www.npmjs.com/package/bcryptjs
 const User = require("./models/User");
+const Message = require("./models/Message");
 const ws = require("ws"); // WebSocket。 https://www.npmjs.com/package/ws
 
 dotenv.config(); // process.env 现在具有您在 .env 文件中定义的键和值
@@ -172,8 +173,8 @@ const server = app.listen(4040);
 
 const wss = new ws.WebSocketServer({ server });
 wss.on("connection", (connection, req) => {
+  // read username and id from the cookies for this connection
   const cookies = req.headers.cookie;
-
   if (cookies) {
     const tokenCookieString = cookies
       .split(";")
@@ -196,10 +197,33 @@ wss.on("connection", (connection, req) => {
     }
   }
 
-  // console.log(
-  //   "wss.clients",
-  //   [...wss.clients].map((c) => c.username)
-  // );
+  connection.on("message", async (message) => {
+    const messageData = JSON.parse(message.toString());
+    console.log("message: ", messageData);
+    const { recipient, text } = messageData;
+    if (recipient && text) {
+      const messageDoc = await Message.create({
+        sender: connection.userId,
+        recipient,
+        text,
+      });
+
+      [...wss.clients]
+        .filter((c) => c.userId === recipient)
+        .forEach((c) =>
+          c.send(
+            JSON.stringify({
+              text,
+              sender: connection.userId,
+              recipient,
+              id: messageDoc._id,
+            })
+          )
+        );
+    }
+  });
+
+  // notify  everyone about online people(when someone connects)
   [...wss.clients].map((client) => {
     client.send(
       JSON.stringify({
