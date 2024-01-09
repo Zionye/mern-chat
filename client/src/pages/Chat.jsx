@@ -82,10 +82,9 @@ const Chat = () => {
 
   useEffect(() => {
     if(selectedUserId){
-      axios.get(`/message/${selectedUserId}`)
-      // .then(res => {
-      //   setMessages(res.data)
-      // })
+      axios.get(`/message/${selectedUserId}`).then(res => {
+        setMessages(res.data)
+      })
     }
   }, [selectedUserId]);
 
@@ -128,8 +127,8 @@ const Chat = () => {
                 {messagesWithoutDupes.map(message => (
                   <div key={message._id} className={(message.sender === id?'text-right':'text-left')}>
                     <div className={"inline-block text-left p-2 my-2 rounded-md text-sm " + (message.sender === id?"bg-blue-500 text-white" : "bg-white text-gray-500")}>
-                      sender: {message.sender} <br />
-                      my id: {id} <br />
+                      {/* sender: {message.sender} <br />
+                      my id: {id} <br /> */}
                       { message.text }
                     </div>
                   </div>
