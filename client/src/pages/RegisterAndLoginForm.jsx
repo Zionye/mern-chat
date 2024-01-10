@@ -5,7 +5,7 @@ import { UserContext } from '../context/userContext';
 const Register = () => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
-  const [isLoginOrRegister, setIsLoginOrRegister] = useState('register');
+  const [isLoginOrRegister, setIsLoginOrRegister] = useState('login');
 
   const { setUsername: setLoggedInUsername, setId } = useContext(UserContext);
 
@@ -42,13 +42,13 @@ const Register = () => {
           {isLoginOrRegister === "register" && (
             <div>
               Already a member? 
-              <button onClick={()=>{setIsLoginOrRegister('login')}}>Login here</button>
+              <button className='ml-1' onClick={()=>{setIsLoginOrRegister('login')}}>Login here</button>
             </div>
           )}
           {isLoginOrRegister === "login" && (
             <div>
               Dont have an account? 
-              <button onClick={()=>{setIsLoginOrRegister('register')}}>Register here</button>
+              <button className='ml-1' onClick={()=>{setIsLoginOrRegister('register')}}>Register here</button>
             </div>
           )}
 
