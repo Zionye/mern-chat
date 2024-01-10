@@ -8,6 +8,8 @@ const bcrypt = require("bcryptjs"); // 密码哈希 https://www.npmjs.com/packag
 const User = require("./models/User");
 const Message = require("./models/Message");
 const ws = require("ws"); // WebSocket。 https://www.npmjs.com/package/ws
+const fs = require("fs");
+const path = require("path");
 
 dotenv.config(); // process.env 现在具有您在 .env 文件中定义的键和值
 // https://mongoosejs.com/docs/connections.html
@@ -66,6 +68,8 @@ var corsOptions = {
 };
 
 const app = express();
+// app.use("/uploads", express.static(__dirname + "/uploads"));
+app.use("/uploads", express.static(path.join(__dirname, "/uploads")));
 app.use(express.json());
 app.use(cookieParser());
 app.use(cors(corsOptions));
@@ -237,7 +241,7 @@ wss.on("connection", (connection, req) => {
   }, 5000);
 
   connection.on("pong", () => {
-    console.log("pong ");
+    // console.log("pong ");
     clearTimeout(connection.deathTimer);
   });
 
@@ -267,21 +271,38 @@ wss.on("connection", (connection, req) => {
 
   connection.on("message", async (message) => {
     const messageData = JSON.parse(message.toString());
-    console.log("message: ", messageData);
-    const { recipient, text } = messageData;
-    if (recipient && text) {
+    console.log("messageData: ", messageData);
+    const { recipient, text, file } = messageData;
+    let filename = null;
+    if (file) {
+      console.log("size", file.data.length);
+      console.log("file: ", file);
+      const parts = file.name.split(".");
+      const ext = parts[parts.length - 1];
+      filename = Date.now() + "." + ext;
+      const path = __dirname + "/uploads/" + filename;
+      const bufferData = new Buffer(file.data.split(",")[1], "base64");
+      fs.writeFile(path, bufferData, () => {
+        console.log("file saved:" + path);
+      });
+    }
+    if (recipient && (text || file)) {
       const messageDoc = await Message.create({
         sender: connection.userId,
         recipient,
         text,
+        file: file ? filename : null,
       });
+      console.log("created message");
 
+      // 给接收方发信息
       [...wss.clients]
         .filter((c) => c.userId === recipient)
         .forEach((c) =>
           c.send(
             JSON.stringify({
               text,
+              file: file ? filename : null,
               sender: connection.userId,
               recipient,
               _id: messageDoc._id,
