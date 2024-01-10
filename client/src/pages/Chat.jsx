@@ -1,7 +1,7 @@
 
 import { useEffect, useState, useContext, useRef } from "react";
-import Avatar from "./Avatar";
 import Logo from "./Logo";
+import Contact from "./Contact";
 import { UserContext } from "../context/userContext";
 import { uniqBy } from "lodash";
 import axios from "axios";
@@ -9,6 +9,7 @@ import axios from "axios";
 const Chat = () => {
   const [ws, setWs] = useState(null);
   const [onlinePeople, setOnlinePeople] = useState({});
+  const [offlinePeople, setOfflinePeople] = useState({});
   const [selectedUserId, setSelectedUserId] = useState(null);
   const [newMessageText, setNewMessageText] = useState("");
   const [messages, setMessages] = useState([]);
@@ -81,6 +82,23 @@ const Chat = () => {
   }, [messages]);
 
   useEffect(() => {
+    axios.get("/people").then(res => {
+      // 从数据中先排除自己的用户，再排除在线用户
+      const offlinePeopleArr = res.data
+        .filter(p => p._id !== id)
+        .filter(p => !Object.keys(onlinePeople).includes(p._id));
+      console.log('offlinePeopleArr: ', offlinePeopleArr);
+      const offlinePeople = {}
+      offlinePeopleArr.map(p => {
+        // offlinePeople[p._id] = p;
+        offlinePeople[p._id] = p.username;
+      })
+      console.log('offlinePeople: ', offlinePeople);
+      setOfflinePeople(offlinePeople);
+    });
+  }, [onlinePeople]);
+
+  useEffect(() => {
     if(selectedUserId){
       axios.get(`/message/${selectedUserId}`).then(res => {
         setMessages(res.data)
@@ -100,18 +118,25 @@ const Chat = () => {
         <Logo />
 
         {Object.keys(onlinePeopleExclOurUser).map(userId => (
-          <div 
-            onClick={()=>setSelectedUserId(userId)} 
-            key={userId} 
-            className={`border-b border-gray-100 flex items-center gap-2 ${userId === selectedUserId ? 'bg-blue-50' : ''}`}>
-              {userId === selectedUserId && (
-                <div className="w-1 h-12 bg-blue-500 rounded-r-md" />
-              )}
-              <div className="flex gap-2 py-2 pl-4 items-center">
-                <Avatar username={onlinePeople[userId]} userId={userId}/>
-                <span>{onlinePeople[userId]}</span>
-              </div>
-          </div>
+          <Contact 
+            online={true}
+            key={userId}
+            id={userId} 
+            username={onlinePeopleExclOurUser[userId]}
+            onSelect={(id) => {setSelectedUserId(userId);console.log({id, userId})}}
+            selected={userId === selectedUserId}
+          />
+        ))}
+
+        {Object.keys(offlinePeople).map(userId => (
+          <Contact 
+            online={false}
+            key={userId}
+            id={userId} 
+            username={offlinePeople[userId]}
+            onSelect={(id) => {setSelectedUserId(userId);console.log({id, userId})}}
+            selected={userId === selectedUserId}
+          />
         ))}
       </div>
       <div className="flex flex-col bg-blue-50 w-2/3 p-2">

@@ -119,6 +119,11 @@ app.get("/message/:userId", async (req, res) => {
   res.json(messages);
 });
 
+app.get("/people", async (req, res) => {
+  const user = await User.find({}, { _id: 1, username: 1 });
+  res.json(user);
+});
+
 app.get("/profile", (req, res) => {
   const token = req.cookies?.token;
   console.log("profile token: --》", token);
