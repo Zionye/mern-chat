@@ -170,6 +170,10 @@ app.post("/login", async (req, res) => {
   }
 });
 
+app.post("/logout", async (req, res) => {
+  res.cookie("token", "", { sameSite: "none", secure: true }).json("ok");
+});
+
 app.post("/register", async (req, res, next) => {
   const { username, password } = req.body;
 
